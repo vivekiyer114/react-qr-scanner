@@ -44,8 +44,8 @@ export default function useCamera() {
         await Promise.race([
             videoEl.play(),
 
-            new Promise((resolve) => setTimeout(resolve, 3000)).then(() => {
-                throw new Error('Loading camera stream timed out after 3 seconds.');
+            new Promise((resolve) => setTimeout(resolve, 10000)).then(() => {
+                throw new Error('Loading camera stream timed out after 10 seconds.');
             })
         ]);
 
