@@ -24,49 +24,52 @@ export default function useCamera() {
 
         shimGetUserMedia();
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: constraints
-        });
-
-        if (videoEl.srcObject !== undefined) {
-            videoEl.srcObject = stream;
-        } else if (videoEl.mozSrcObject !== undefined) {
-            videoEl.mozSrcObject = stream;
-        } else if (window.URL.createObjectURL) {
-            videoEl.src = (window.URL.createObjectURL as CreateObjectURLCompat)(stream);
-        } else if (window.webkitURL) {
-            videoEl.src = (window.webkitURL.createObjectURL as CreateObjectURLCompat)(stream);
-        } else {
-            videoEl.src = stream.id;
-        }
-
-        await Promise.race([
-            videoEl.play(),
-
-            new Promise((resolve) => setTimeout(resolve, 20000)).then(() => {
-                throw new Error('Loading camera stream timed out after 20 seconds.');
-            })
-        ]);
-
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        const [track] = stream.getVideoTracks();
-
-        setSettings(track.getSettings());
-        setCapabilities(track?.getCapabilities?.() ?? {});
-
-        currentStream.current = stream;
-        currentVideoTrack.current = track;
-
-        return {
-            type: 'start',
-            data: {
-                videoEl,
-                stream,
-                constraints
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: constraints
+            });
+            if (videoEl.srcObject !== undefined) {
+                videoEl.srcObject = stream;
+            } else if (videoEl.mozSrcObject !== undefined) {
+                videoEl.mozSrcObject = stream;
+            } else if (window.URL.createObjectURL) {
+                videoEl.src = (window.URL.createObjectURL as CreateObjectURLCompat)(stream);
+            } else if (window.webkitURL) {
+                videoEl.src = (window.webkitURL.createObjectURL as CreateObjectURLCompat)(stream);
+            } else {
+                videoEl.src = stream.id;
             }
-        };
+
+            await Promise.race([
+                videoEl.play(),
+
+                new Promise((resolve) => setTimeout(resolve, 20000)).then(() => {
+                    throw new Error('Loading camera stream timed out after 20 seconds.');
+                })
+            ]);
+
+            await new Promise((resolve) => setTimeout(resolve, 500));
+
+            const [track] = stream.getVideoTracks();
+
+            setSettings(track.getSettings());
+            setCapabilities(track?.getCapabilities?.() ?? {});
+
+            currentStream.current = stream;
+            currentVideoTrack.current = track;
+
+            return {
+                type: 'start',
+                data: {
+                    videoEl,
+                    stream,
+                    constraints
+                }
+            };
+        } catch (err) {
+            throw new Error('Camera permission denied!');
+        }
     }, []);
 
     const runStopTask = useCallback(async (videoEl: HTMLVideoElement, stream: MediaStream): Promise<IStopTaskResult> => {
